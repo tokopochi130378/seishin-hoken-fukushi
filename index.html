@@ -22,14 +22,14 @@ footer{max-width:1050px;margin:30px auto;padding:0 16px 35px;color:#6b7683;font-
 </main>
 <footer>このサイトはGitHub上の <code>terms.json</code> を編集することで、用語を追加・修正できます。</footer>
 <script>
-const owner="REPLACE_OWNER";
-const repo="REPLACE_REPO";
+const owner="tokopochi130378";
+const repo="seishin-hoken-fukushi";
 let terms=[];
 const app=document.getElementById("app");
 
 async function load(){
  try{
-  const r=await fetch("data/terms.json?"+Date.now());
+  const r=await fetch("terms.json?"+Date.now());
   terms=await r.json();
  }catch(e){app.innerHTML="<div class='notice'>用語データを読み込めませんでした。data/terms.json が同じサイト内にあるか確認してください。</div>";return}
  render();
