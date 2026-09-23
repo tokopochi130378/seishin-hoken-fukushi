@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>精神保健福祉Wiki</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;background:#f6f8fb;color:#202938}
+header{background:#17324d;color:#fff;padding:28px 20px}header .wrap,main{max-width:1050px;margin:auto}.brand{font-size:28px;font-weight:700}.sub{margin-top:7px;opacity:.9}
+main{padding:22px 16px}.search{width:100%;padding:15px;border:1px solid #ccd5df;border-radius:10px;font-size:16px;margin-bottom:22px}
+h2{font-size:20px;margin:26px 0 12px}.cats{display:flex;flex-wrap:wrap;gap:8px}.cat{border:1px solid #c9d3df;background:#fff;padding:9px 13px;border-radius:999px;cursor:pointer}.cat:hover{background:#edf4fb}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}.card{background:#fff;border:1px solid #dce3eb;border-radius:12px;padding:16px;cursor:pointer}.card:hover{box-shadow:0 3px 14px #00000012}.tag{display:inline-block;font-size:12px;background:#eef4fa;padding:4px 8px;border-radius:6px;margin-bottom:9px}.name{font-size:18px;font-weight:700}.desc{font-size:14px;line-height:1.7;color:#536171;margin-top:8px}
+.detail{background:#fff;border:1px solid #dce3eb;border-radius:14px;padding:22px}.back{display:inline-block;margin-bottom:15px;cursor:pointer}.edit{display:inline-block;background:#17324d;color:#fff;text-decoration:none;padding:10px 14px;border-radius:8px;margin-top:15px}.points{line-height:1.8}.notice{background:#fff8df;border:1px solid #eadb9c;padding:12px;border-radius:9px;margin:15px 0;font-size:14px}
+footer{max-width:1050px;margin:30px auto;padding:0 16px 35px;color:#6b7683;font-size:13px}
+@media(max-width:600px){.brand{font-size:23px}.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><div class="brand">🧠 精神保健福祉Wiki</div><div class="sub">精神保健福祉の用語を調べ、あとから追加・修正できるWiki型サイト</div></div></header>
+<main>
+<div id="app"></div>
+</main>
+<footer>このサイトはGitHub上の <code>data/terms.json</code> を編集することで、用語を追加・修正できます。</footer>
+<script>
+const owner="REPLACE_OWNER";
+const repo="REPLACE_REPO";
+let terms=[];
+const app=document.getElementById("app");
+
+async function load(){
+ try{
+  const r=await fetch("data/terms.json?"+Date.now());
+  terms=await r.json();
+ }catch(e){app.innerHTML="<div class='notice'>用語データを読み込めませんでした。data/terms.json が同じサイト内にあるか確認してください。</div>";return}
+ render();
+}
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function card(t){return `<div class="card" onclick="location.hash='term/${encodeURIComponent(t.id)}'"><div class="tag">${esc(t.category)}</div><div class="name">${esc(t.name)}</div><div class="desc">${esc(t.description)}</div></div>`}
+function home(filter=""){
+ const cats=[...new Set(terms.map(t=>t.category))].sort();
+ const shown=terms.filter(t=>(t.name+" "+t.description+" "+t.category).toLowerCase().includes(filter.toLowerCase()));
+ app.innerHTML=`<input id="search" class="search" placeholder="🔎 用語を検索…" value="${esc(filter)}">
+ <h2>📚 カテゴリーから探す</h2><div class="cats">${cats.map(c=>`<button class="cat" onclick="location.hash='cat/${encodeURIComponent(c)}'">${esc(c)}</button>`).join("")}</div>
+ <h2>📖 用語から探す <span style="font-size:13px;color:#778">（${shown.length}語）</span></h2>
+ <div class="grid">${shown.map(card).join("")||"<div class='notice'>該当する用語がありません。</div>"}</div>`;
+ document.getElementById("search").oninput=e=>home(e.target.value);
+}
+function detail(id){
+ const t=terms.find(x=>x.id===id); if(!t)return home();
+ const related=terms.filter(x=>x.category===t.category&&x.id!==t.id);
+ app.innerHTML=`<div class="detail"><div class="back" onclick="location.hash=''">← 一覧へ戻る</div><div class="tag">${esc(t.category)}</div><h1>${esc(t.name)}</h1><p style="line-height:1.9">${esc(t.description)}</p>
+ <h2>ポイント</h2><ul class="points">${(t.points||[]).map(x=>`<li>${esc(x)}</li>`).join("")}</ul>
+ <a class="edit" href="https://github.com/${owner}/${repo}/edit/main/data/terms.json" target="_blank">✏️ GitHubで編集する</a>
+ ${related.length?`<h2>同じカテゴリーの用語</h2><div class="grid">${related.map(card).join("")}</div>`:""}</div>`;
+}
+function category(cat){
+ const list=terms.filter(t=>t.category===cat);
+ app.innerHTML=`<div class="back" onclick="location.hash=''">← 一覧へ戻る</div><h1>「${esc(cat)}」</h1><p>${list.length}語</p><div class="grid">${list.map(card).join("")}</div>`;
+}
+function render(){
+ const p=decodeURIComponent(location.hash.slice(1));
+ if(p.startsWith("term/"))detail(p.slice(5));
+ else if(p.startsWith("cat/"))category(p.slice(4));
+ else home();
+}
+window.addEventListener("hashchange",render);load();
+</script>
+</body></html>
